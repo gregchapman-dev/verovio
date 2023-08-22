@@ -2777,28 +2777,41 @@ void HumdrumInput::createHeader()
     pugi::xml_document availability;
     for (int i = 0; i < (int)references.size(); ++i) {
         std::string refKey = references[i]->getReferenceKey();
-        if (refKey.compare(0, 2, "YE") && refKey.compare(0, 3, "EED") && refKey.compare(0, 3, "PED")) {
+        if (refKey.compare(0, 2, "YE")
+            && refKey.compare(0, 3, "EED")
+            && refKey.compare(0, 3, "ENC")
+            && refKey.compare(0, 3, "PED")) {
             continue;
         }
         else if (refKey.compare(0, 3, "EED") == 0) {
             if (!pubRespStmt) {
                 pubRespStmt = pubStmt.prepend_child("respStmt");
             }
-            pugi::xml_node editor = pubRespStmt.append_child("persName");
-            editor.append_attribute("xml:id") = StringFormat("persname-L%d", references[i]->getLineNumber()).c_str();
-            editor.append_attribute("analog") = "humdrum:EED";
-            editor.append_attribute("role") = "digital editor";
-            editor.append_child(pugi::node_pcdata).set_value(references[i]->getReferenceValue().c_str());
+            pugi::xml_node persName = pubRespStmt.append_child("persName");
+            persName.append_attribute("xml:id") = StringFormat("persname-L%d", references[i]->getLineNumber()).c_str();
+            persName.append_attribute("analog") = "humdrum:EED";
+            persName.append_attribute("role") = "digital editor";
+            persName.append_child(pugi::node_pcdata).set_value(references[i]->getReferenceValue().c_str());
+        }
+        else if (refKey.compare(0, 3, "ENC") == 0) {
+            if (!pubRespStmt) {
+                pubRespStmt = pubStmt.prepend_child("respStmt");
+            }
+            pugi::xml_node persName = pubRespStmt.append_child("persName");
+            persName.append_attribute("xml:id") = StringFormat("persname-L%d", references[i]->getLineNumber()).c_str();
+            persName.append_attribute("analog") = "humdrum:ENC";
+            persName.append_attribute("role") = "encoder";
+            persName.append_child(pugi::node_pcdata).set_value(references[i]->getReferenceValue().c_str());
         }
         else if (refKey.compare(0, 3, "PED") == 0) {
             if (!pubRespStmt) {
                 pubRespStmt = pubStmt.prepend_child("respStmt");
             }
-            pugi::xml_node editor = pubRespStmt.append_child("persName");
-            editor.append_attribute("xml:id") = StringFormat("persname-L%d", references[i]->getLineNumber()).c_str();
-            editor.append_attribute("analog") = "humdrum:PED";
-            editor.append_attribute("role") = "source editor";
-            editor.append_child(pugi::node_pcdata).set_value(references[i]->getReferenceValue().c_str());
+            pugi::xml_node persName = pubRespStmt.append_child("persName");
+            persName.append_attribute("xml:id") = StringFormat("persname-L%d", references[i]->getLineNumber()).c_str();
+            persName.append_attribute("analog") = "humdrum:PED";
+            persName.append_attribute("role") = "source editor";
+            persName.append_child(pugi::node_pcdata).set_value(references[i]->getReferenceValue().c_str());
         }
         else if (refKey.compare(2, 1, "C") == 0) {
             pugi::xml_node useRestrict = availability.append_child("useRestrict");
@@ -3033,7 +3046,7 @@ void HumdrumInput::insertPeople(pugi::xml_node &work, std::vector<std::vector<st
     if (respPeople.size() == 0) {
         return;
     }
-    // pugi::xml_node respStmt = titleStmt.append_child("respStmt");
+    // first the people who have dedicated elements (composer, lyricist, librettist)
     bool created = false;
     pugi::xml_node person;
     for (int i = 0; i < (int)respPeople.size(); ++i) {
@@ -3044,12 +3057,12 @@ void HumdrumInput::insertPeople(pugi::xml_node &work, std::vector<std::vector<st
         }
         if (respPeople[i][1] == "attributed composer") {
             person = work.append_child("composer");
-            person.append_attribute("cert") = "unknown";
+            person.append_attribute("cert") = "medium";
             created = true;
         }
         if (respPeople[i][1] == "suspected composer") {
             person = work.append_child("composer");
-            person.append_attribute("cert") = "unknown";
+            person.append_attribute("cert") = "low";
             created = true;
         }
         else if (respPeople[i][1] == "lyricist") {
@@ -3068,6 +3081,26 @@ void HumdrumInput::insertPeople(pugi::xml_node &work, std::vector<std::vector<st
             }
             person.append_attribute("xml:id") = StringFormat("person-L%s", respPeople[i][3].c_str()).c_str();
         }
+    }
+
+    // Now all the rest, as contributor@role
+    pugi::xml_node contributor;
+    for (int i = 0; i < (int)respPeople.size(); ++i) {
+        if (respPeople[i][1] == "composer"
+            or respPeople[i][1] == "attributed composer"
+            or respPeople[i][1] == "suspected composer"
+            or respPeople[i][1] == "lyricist"
+            or respPeople[i][1] == "librettist") {
+            continue;
+        }
+
+        contributor = work.append_child("contributor");
+        contributor.text().set(unescapeHtmlEntities(respPeople[i][0]).c_str());
+        contributor.append_attribute("role") = respPeople[i][1].c_str();
+        if (!respPeople[i][2].empty()) {
+            contributor.append_attribute("analog") = StringFormat("humdrum:%s", respPeople[i][2].c_str()).c_str();
+        }
+        contributor.append_attribute("xml:id") = StringFormat("person-L%s", respPeople[i][3].c_str()).c_str();
     }
 }
 
@@ -3089,6 +3122,8 @@ void HumdrumInput::getRespPeople(
 {
 
     // precalculate a reference map here to make more O(N) rather than O(N^2)
+    // Leave out the people that we have explicitly already emitted inside
+    // fileDesc/pubStmt/respStmt (see createHeader: currently this is "PED", "EED", and "ENC").
     addPerson(respPeople, references, "COM", "composer"); // cmp
     addPerson(respPeople, references, "COA", "attributed composer");
     addPerson(respPeople, references, "COS", "suspected composer");
@@ -3102,9 +3137,12 @@ void HumdrumInput::getRespPeople(
     addPerson(respPeople, references, "ODE", "dedicatee"); // dte
     addPerson(respPeople, references, "OCO", "patron"); // commissioner, pat
     addPerson(respPeople, references, "OCL", "collector"); // col
-    addPerson(respPeople, references, "PED", "source editor");
-    addPerson(respPeople, references, "EED", "digital editor");
-    addPerson(respPeople, references, "ENC", "encoder"); // mrk,
+    addPerson(respPeople, references, "YOO", "originalDocumentOwner"); //
+    addPerson(respPeople, references, "PPR", "firstPublisher"); //
+
+    // already in fileDesc addPerson(respPeople, references, "PED", "source editor");
+    // already in fileDesc addPerson(respPeople, references, "EED", "digital editor");
+    // already in fileDesc addPerson(respPeople, references, "ENC", "encoder"); // mrk
     // Markup editor
 }
 
@@ -3117,7 +3155,8 @@ void HumdrumInput::addPerson(std::vector<std::vector<std::string>> &respPeople,
     std::vector<hum::HumdrumLine *> &references, const std::string &key, const std::string &role)
 {
     for (int i = 0; i < (int)references.size(); ++i) {
-        if (references[i]->getReferenceKey() == key) {
+        std::string refKey = references[i]->getReferenceKey();
+        if (refKey.compare(0, 3, key) == 0) {
             respPeople.resize(respPeople.size() + 1);
             respPeople.back().resize(4);
             respPeople.back()[0] = references[i]->getReferenceValue();
