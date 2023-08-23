@@ -3130,15 +3130,20 @@ void HumdrumInput::getRespPeople(
     addPerson(respPeople, references, "LYR", "lyricist"); // lyr
     addPerson(respPeople, references, "LIB", "librettist"); // lbt
     addPerson(respPeople, references, "LAR", "arranger"); // arr
-    addPerson(respPeople, references, "LOR", "adapter"); // orchestrator, adp
-    addPerson(respPeople, references, "RPN", "producer"); // pro
+    addPerson(respPeople, references, "LOR", "orchestrator"); // adp
+    addPerson(respPeople, references, "RNP", "producer"); // pro
     addPerson(respPeople, references, "MPN", "performer"); // prf, also: Singer/Instrumentalist
+    addPerson(respPeople, references, "MPS", "suspected performer");
+    addPerson(respPeople, references, "MGN", "ensemble");
     addPerson(respPeople, references, "MCN", "conductor"); // cnd
     addPerson(respPeople, references, "ODE", "dedicatee"); // dte
     addPerson(respPeople, references, "OCO", "patron"); // commissioner, pat
     addPerson(respPeople, references, "OCL", "collector"); // col
-    addPerson(respPeople, references, "YOO", "originalDocumentOwner"); //
-    addPerson(respPeople, references, "PPR", "firstPublisher"); //
+    addPerson(respPeople, references, "YOO", "originalDocumentOwner");
+    addPerson(respPeople, references, "PPR", "firstPublisher");
+    addPerson(respPeople, references, "TRN", "translator");
+    addPerson(respPeople, references, "RMM", "manufacturer");
+
 
     // already in fileDesc addPerson(respPeople, references, "PED", "source editor");
     // already in fileDesc addPerson(respPeople, references, "EED", "digital editor");
