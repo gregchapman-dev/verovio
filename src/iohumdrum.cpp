@@ -2913,10 +2913,18 @@ void HumdrumInput::createHeader()
     pugi::xml_node work = workList.append_child("work");
 
     std::string SCT = getReferenceValue("SCT", references);
-    if (!SCT.empty()) {
-        pugi::xml_node identifier = work.append_child("identifier");
-        identifier.append_attribute("analog") = "humdrum:SCT";
-        identifier.append_child(pugi::node_pcdata).set_value(SCT.c_str());
+    std::string SCA = getReferenceValue("SCA", references);
+    std::string PCHash = getReferenceValue("PC#", references);
+    if (!SCT.empty() || !SCA.empty() || !PCHash.empty()) {
+        for (int i = 0; i < (int)references.size(); ++i) {
+            std::string key = references[i]->getReferenceKey();
+            if (key == "SCT" || key == "SCA" || key == "PC#") {
+                std::string value = references[i]->getReferenceValue();
+                pugi::xml_node identifier = work.append_child("identifier");
+                identifier.append_attribute("analog") = StringFormat("humdrum:%s", key.c_str()).c_str();
+                identifier.append_child(pugi::node_pcdata).set_value(value.c_str());
+            }
+        }
     }
     // <titleStmt> removed in MEI 4.0
     // pugi::xml_node titleStmt = work.append_child("titleStmt");
