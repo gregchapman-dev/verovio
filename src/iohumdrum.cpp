@@ -2917,7 +2917,7 @@ void HumdrumInput::createHeader()
     std::string PCHash = getReferenceValue("PC#", references);
     if (!SCT.empty() || !SCA.empty() || !PCHash.empty()) {
         for (int i = 0; i < (int)references.size(); ++i) {
-            std::string key = references[i]->getReferenceKey();
+            std::string key = references[i]->getReferenceKey().substr(0, 3);
             if (key == "SCT" || key == "SCA" || key == "PC#") {
                 std::string value = references[i]->getReferenceValue();
                 pugi::xml_node identifier = work.append_child("identifier");
@@ -2990,7 +2990,8 @@ void HumdrumInput::createHeader()
 string HumdrumInput::getReferenceValue(const std::string &key, std::vector<hum::HumdrumLine *> &references)
 {
     for (int i = 0; i < (int)references.size(); ++i) {
-        if (key == references[i]->getReferenceKey()) {
+        std::string refKey = references[i]->getReferenceKey();
+        if (refKey.compare(0, 3, key) == 0) {
             return references[i]->getReferenceValue();
         }
     }
