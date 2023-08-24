@@ -3239,7 +3239,7 @@ void HumdrumInput::insertTitle(pugi::xml_node &work, const std::vector<hum::Humd
         plang = false;
         lang = false;
         key = references[i]->getReferenceKey();
-        if (key.compare(0, 2, "OT") && key.compare(0, 1, "X")) {
+        if (key.compare(0, 2, "OT")) {
             continue;
         }
         value = references[i]->getReferenceValue();
@@ -3304,9 +3304,6 @@ void HumdrumInput::insertTitle(pugi::xml_node &work, const std::vector<hum::Humd
             if (lang) {
                 title.append_attribute("xml:lang") = language.c_str();
             }
-        }
-        else {
-            title.append_attribute("type") = "translated";
         }
     }
 
